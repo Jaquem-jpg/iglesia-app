@@ -1,18 +1,23 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from models.db import init_db, close_db, get_db
 from decorators import login_required, admin_required
-# import pandas as pd  # COMENTADO TEMPORALMENTE
 import os
 
 app = Flask(__name__)
-app.config.from_pyfile('config.py')
-app.secret_key = app.config['SECRET_KEY']
 
-# Inicializar base de datos solo si no existe
+# ==================== CONFIGURACIÓN DIRECTA ====================
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'iglesia-secret-key-2024')
+
+# Definir DATABASE directamente (evita problemas con config.py)
+if os.environ.get('RENDER'):
+    app.config['DATABASE'] = '/data/iglesia.db'
+else:
+    app.config['DATABASE'] = 'iglesia.db'
+
+# ==================== INICIALIZAR BASE DE DATOS ====================
 with app.app_context():
     db = get_db()
     try:
-        # Verificar si la tabla usuarios existe
         db.execute("SELECT 1 FROM usuarios LIMIT 1")
         print("✅ Base de datos ya existe")
     except:
@@ -107,22 +112,16 @@ def eliminar_usuario(user_id):
     flash("🗑️ Usuario eliminado correctamente", "danger")
     return redirect(url_for("listar_usuarios"))
 
-# ==================== EXPORTAR MIEMBROS A EXCEL (SOLO ADMIN) ====================
-# COMENTADO TEMPORALMENTE - Problema con pandas en Python 3.14
+# ==================== EXPORTAR MIEMBROS A EXCEL (COMENTADO - SIN PANDAS) ====================
 # @app.route("/miembros/exportar")
 # @admin_required
 # def exportar_miembros():
 #     db = get_db()
 #     miembros = db.execute("SELECT nombre, telefono FROM miembros ORDER BY nombre").fetchall()
-# 
-#     df = pd.DataFrame(miembros, columns=["Nombre", "Teléfono (WhatsApp)"])
-#     df.to_excel('miembros.xlsx', index=False, engine='openpyxl')
-# 
-#     return send_file(
-#         'miembros.xlsx',
-#         as_attachment=True,
-#         download_name='Miembros_Iglesia.xlsx'
-#     )
+#     
+#     # Aquí iría la exportación a Excel (requiere pandas)
+#     flash("⏳ Función de exportación en desarrollo", "info")
+#     return redirect(url_for("dashboard"))
 
 # ==================== BLUEPRINTS ====================
 from routes.miembros import miembros_bp
