@@ -1,13 +1,11 @@
--- schema.sql - Versión limpia para iglesia
-
 CREATE TABLE IF NOT EXISTS miembros (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     nombre TEXT NOT NULL,
     telefono TEXT
 );
 
 CREATE TABLE IF NOT EXISTS eventos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     titulo TEXT NOT NULL,
     fecha TEXT NOT NULL,
     hora TEXT,
@@ -16,12 +14,13 @@ CREATE TABLE IF NOT EXISTS eventos (
 );
 
 CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    rol TEXT NOT NULL DEFAULT 'invitado'   -- admin o invitado
+    rol TEXT NOT NULL DEFAULT 'invitado'
 );
 
--- Usuario administrador inicial (puedes cambiar la contraseña después)
-INSERT OR IGNORE INTO usuarios (username, password, rol) 
-VALUES ('admin', 'iglesia123', 'admin');
+-- Usuario admin inicial
+INSERT INTO usuarios (username, password, rol)
+VALUES ('admin', 'iglesia123', 'admin')
+ON CONFLICT (username) DO NOTHING;
