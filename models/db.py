@@ -1,6 +1,5 @@
 import os
-import psycopg2  
-import psycopg2.extras  
+import psycopg2
 from flask import g, current_app
 
 def get_db():
@@ -26,9 +25,15 @@ def init_db():
         schema_path = os.path.join(os.path.dirname(__file__), '..', 'schema_postgres.sql')
     
     try:
+        # Leer el archivo SQL
         with open(schema_path, 'r', encoding='utf-8') as f:
             sql = f.read()
-            cur.execute(sql)
+        
+        # Ejecutar línea por línea (evita problemas de transacción)
+        for statement in sql.split(';'):
+            if statement.strip():
+                cur.execute(statement)
+        
         db.commit()
         print("✅ Base de datos PostgreSQL inicializada correctamente")
     except Exception as e:
