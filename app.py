@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from models.db import init_db, close_db, get_db
 from decorators import login_required, admin_required
-import pandas as pd
+# import pandas as pd  # COMENTADO TEMPORALMENTE
 import os
 
 app = Flask(__name__)
@@ -108,20 +108,21 @@ def eliminar_usuario(user_id):
     return redirect(url_for("listar_usuarios"))
 
 # ==================== EXPORTAR MIEMBROS A EXCEL (SOLO ADMIN) ====================
-@app.route("/miembros/exportar")
-@admin_required
-def exportar_miembros():
-    db = get_db()
-    miembros = db.execute("SELECT nombre, telefono FROM miembros ORDER BY nombre").fetchall()
-
-    df = pd.DataFrame(miembros, columns=["Nombre", "Teléfono (WhatsApp)"])
-    df.to_excel('miembros.xlsx', index=False, engine='openpyxl')
-
-    return send_file(
-        'miembros.xlsx',
-        as_attachment=True,
-        download_name='Miembros_Iglesia.xlsx'
-    )
+# COMENTADO TEMPORALMENTE - Problema con pandas en Python 3.14
+# @app.route("/miembros/exportar")
+# @admin_required
+# def exportar_miembros():
+#     db = get_db()
+#     miembros = db.execute("SELECT nombre, telefono FROM miembros ORDER BY nombre").fetchall()
+# 
+#     df = pd.DataFrame(miembros, columns=["Nombre", "Teléfono (WhatsApp)"])
+#     df.to_excel('miembros.xlsx', index=False, engine='openpyxl')
+# 
+#     return send_file(
+#         'miembros.xlsx',
+#         as_attachment=True,
+#         download_name='Miembros_Iglesia.xlsx'
+#     )
 
 # ==================== BLUEPRINTS ====================
 from routes.miembros import miembros_bp
