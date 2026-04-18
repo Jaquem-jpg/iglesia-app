@@ -5,21 +5,34 @@ import os
 
 app = Flask(__name__)
 
-# ==================== CONFIGURACIÓN DIRECTA ====================
+# ==================== CONFIGURACIÓN ====================
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'iglesia-secret-key-2024')
 
-# Definir DATABASE directamente (evita problemas con config.py)
-if os.environ.get('RENDER'):
-    app.config['DATABASE'] = '/data/iglesia.db'
+# Usar PostgreSQL en producción (Render) o SQLite en local
+if os.environ.get('DATABASE_URL'):
+    app.config['DATABASE_URL'] = os.environ.get('DATABASE_URL')
+    print("✅ Usando PostgreSQL en producción")
 else:
+    # Local: usar SQLite
     app.config['DATABASE'] = 'iglesia.db'
+    print("✅ Usando SQLite local")
 
 # ==================== INICIALIZAR BASE DE DATOS ====================
 with app.app_context():
-    db = get_db()
     try:
-        db.execute("SELECT 1 FROM usuarios LIMIT 1")
-        print("✅ Base de datos ya existe")
+        if os.environ.get('DATABASE_URL'):
+            # PostgreSQL
+            db = get_db()
+            cur = db.cursor()
+            cur.execute("SELECT 1 FROM usuarios LIMIT 1")
+            cur.close()
+            print("✅ PostgreSQL: Base de datos ya existe")
+        else:
+            # SQLite local
+            import sqlite3
+            conn = sqlite3.connect('iglesia.db')
+            conn.close()
+            print("✅ SQLite local listo")
     except:
         print("📦 Creando base de datos por primera vez...")
         init_db()
@@ -34,18 +47,21 @@ def login():
         password = request.form.get("password", "").strip()
 
         db = get_db()
-        user = db.execute(
-            "SELECT * FROM usuarios WHERE username = ? AND password = ?",
+        cur = db.cursor()
+        cur.execute(
+            "SELECT * FROM usuarios WHERE username = %s AND password = %s",
             (username, password)
-        ).fetchone()
+        )
+        user = cur.fetchone()
+        cur.close()
 
         if user:
             session["logged_in"] = True
-            session["user_id"] = user["id"]
-            session["username"] = user["username"]
-            session["rol"] = user["rol"]
+            session["user_id"] = user[0]
+            session["username"] = user[1]
+            session["rol"] = user[3]
 
-            flash(f"✅ Bienvenido, {user['username']}", "success")
+            flash(f"✅ Bienvenido, {user[1]}", "success")
             return redirect(url_for("dashboard"))
         else:
             flash("❌ Usuario o contraseña incorrectos", "danger")
@@ -64,9 +80,10 @@ def register():
             return redirect(url_for("register"))
 
         db = get_db()
+        cur = db.cursor()
         try:
-            db.execute(
-                "INSERT INTO usuarios (username, password, rol) VALUES (?, ?, 'invitado')",
+            cur.execute(
+                "INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, 'invitado')",
                 (username, password)
             )
             db.commit()
@@ -74,6 +91,8 @@ def register():
             return redirect(url_for("login"))
         except Exception:
             flash("⚠️ Ese nombre de usuario ya está registrado. Elige otro.", "danger")
+        finally:
+            cur.close()
 
     return render_template("register.html")
 
@@ -95,7 +114,10 @@ def dashboard():
 @admin_required
 def listar_usuarios():
     db = get_db()
-    usuarios = db.execute("SELECT id, username, rol FROM usuarios ORDER BY username").fetchall()
+    cur = db.cursor()
+    cur.execute("SELECT id, username, rol FROM usuarios ORDER BY username")
+    usuarios = cur.fetchall()
+    cur.close()
     return render_template("usuarios.html", usuarios=usuarios)
 
 # ==================== ELIMINAR USUARIO (SOLO ADMIN) ====================
@@ -107,19 +129,17 @@ def eliminar_usuario(user_id):
         flash("⛔ No puedes eliminar tu propia cuenta", "danger")
         return redirect(url_for("listar_usuarios"))
     
-    db.execute("DELETE FROM usuarios WHERE id = ?", (user_id,))
+    cur = db.cursor()
+    cur.execute("DELETE FROM usuarios WHERE id = %s", (user_id,))
     db.commit()
+    cur.close()
     flash("🗑️ Usuario eliminado correctamente", "danger")
     return redirect(url_for("listar_usuarios"))
 
-# ==================== EXPORTAR MIEMBROS A EXCEL (COMENTADO - SIN PANDAS) ====================
+# ==================== EXPORTAR MIEMBROS (COMENTADO) ====================
 # @app.route("/miembros/exportar")
 # @admin_required
 # def exportar_miembros():
-#     db = get_db()
-#     miembros = db.execute("SELECT nombre, telefono FROM miembros ORDER BY nombre").fetchall()
-#     
-#     # Aquí iría la exportación a Excel (requiere pandas)
 #     flash("⏳ Función de exportación en desarrollo", "info")
 #     return redirect(url_for("dashboard"))
 
