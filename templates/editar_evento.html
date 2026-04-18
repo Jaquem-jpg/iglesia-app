@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Evento{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Editar Evento</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('eventos.editar', id=evento['id']) }}" method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Título del evento</label>
+                                <input type="text" name="titulo" class="form-control" 
+                                       value="{{ evento['titulo'] }}" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Fecha</label>
+                                <input type="date" name="fecha" class="form-control" 
+                                       value="{{ evento['fecha'] }}" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Hora</label>
+                                <input type="time" name="hora" class="form-control" 
+                                       value="{{ evento['hora'] }}">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Lugar</label>
+                                <input type="text" name="lugar" class="form-control" 
+                                       value="{{ evento['lugar'] }}">
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Descripción</label>
+                                <textarea name="descripcion" class="form-control" rows="3">{{ evento['descripcion'] }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> Guardar cambios
+                            </button>
+                            <a href="{{ url_for('eventos.listar') }}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

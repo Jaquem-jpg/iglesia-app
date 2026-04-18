@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios Registrados - Iglesia App{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>👤 Usuarios Registrados</h2>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            ← Volver al Dashboard
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <strong>Lista de Usuarios del Sistema</strong>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre de Usuario</th>
+                        <th>Rol</th>
+                        <th width="120">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    <tr>
+                        <td>{{ u['id'] }}</td>
+                        <td><strong>{{ u['username'] }}</strong></td>
+                        <td>
+                            {% if u['rol'] == 'admin' %}
+                                <span class="badge bg-success">Administrador</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Invitado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u['id'] != session.user_id %}
+                            <form method="POST" 
+                                  action="{{ url_for('eliminar_usuario', user_id=u['id']) }}" 
+                                  onsubmit="return confirm('¿Eliminar este usuario? Esta acción no se puede deshacer.')">
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    🗑️ Eliminar
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-muted small">No se puede eliminar</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
