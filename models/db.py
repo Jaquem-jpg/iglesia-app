@@ -5,22 +5,16 @@ from flask import g, current_app
 
 def get_db():
     if 'db' not in g:
-        # Fallback si DATABASE no está en config
-        if hasattr(current_app.config, 'DATABASE') and current_app.config.get('DATABASE'):
-            db_path = current_app.config['DATABASE']
+        # Path de la base de datos
+        if os.environ.get('RENDER'):
+            db_path = '/opt/render/project/src/data/iglesia.db'
         else:
-            # Fallback directo
-            if os.environ.get('RENDER'):
-                db_path = '/opt/render/project/src/data/iglesia.db'
-            else:
-                db_path = 'iglesia.db'
+            db_path = 'iglesia.db'
 
-        # Crear directorio
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
         g.db = sqlite3.connect(db_path)
-        g.db.row_factory = sqlite3.Row   # Importante para m['id']
-    
+        g.db.row_factory = sqlite3.Row   # ← Esto arregla el error del tuple
     return g.db
 
 
@@ -33,7 +27,6 @@ def close_db(e=None):
 def init_db():
     db = get_db()
     schema_path = os.path.join(current_app.root_path, 'schema.sql')
-    
     if not os.path.exists(schema_path):
         schema_path = os.path.join(os.path.dirname(__file__), '..', 'schema.sql')
 
