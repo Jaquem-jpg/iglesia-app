@@ -1,26 +1,28 @@
+-- schema.sql
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    rol TEXT DEFAULT 'invitado'
+);
+
 CREATE TABLE IF NOT EXISTS miembros (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
-    telefono TEXT
+    telefono TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS eventos (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     titulo TEXT NOT NULL,
     fecha TEXT NOT NULL,
     hora TEXT,
     lugar TEXT,
-    descripcion TEXT
+    descripcion TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    rol TEXT NOT NULL DEFAULT 'invitado'
-);
-
--- Usuario admin inicial
-INSERT INTO usuarios (username, password, rol)
-VALUES ('admin', 'iglesia123', 'admin')
-ON CONFLICT (username) DO NOTHING;
+-- Usuario admin por defecto (cambia la contraseña después)
+INSERT OR IGNORE INTO usuarios (username, password, rol) 
+VALUES ('admin', 'admin123', 'admin');

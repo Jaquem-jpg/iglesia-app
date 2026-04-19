@@ -1,19 +1,16 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-import os
-
+# app.py
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from models.db import init_db, close_db, get_db
 from decorators import login_required, admin_required
+import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'iglesia-secret-key-2024')
+app.config.from_pyfile('config.py')
+app.secret_key = app.config['SECRET_KEY']
 
-# ==================== INICIALIZAR DB (FIX REAL) ====================
+# Inicializar base de datos
 with app.app_context():
-    try:
-        init_db()
-        print("✅ Base de datos inicializada correctamente")
-    except Exception as e:
-        print("❌ Error inicializando DB:", e)
+    init_db()
 
 app.teardown_appcontext(close_db)
 
@@ -25,29 +22,25 @@ def login():
         password = request.form.get("password", "").strip()
 
         db = get_db()
-        cur = db.cursor()
-        cur.execute(
-            "SELECT * FROM usuarios WHERE username = %s AND password = %s",
+        user = db.execute(
+            "SELECT * FROM usuarios WHERE username = ? AND password = ?",
             (username, password)
-        )
-        user = cur.fetchone()
-        cur.close()
+        ).fetchone()
 
         if user:
             session["logged_in"] = True
-            session["user_id"] = user[0]
-            session["username"] = user[1]
-            session["rol"] = user[3]
+            session["user_id"] = user["id"]
+            session["username"] = user["username"]
+            session["rol"] = user["rol"]
 
-            flash(f"✅ Bienvenido, {user[1]}", "success")
+            flash(f"✅ Bienvenido, {user['username']}", "success")
             return redirect(url_for("dashboard"))
         else:
             flash("❌ Usuario o contraseña incorrectos", "danger")
 
     return render_template("login.html")
 
-
-# ==================== REGISTER ====================
+# ==================== REGISTRO ====================
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -55,27 +48,22 @@ def register():
         password = request.form.get("password", "").strip()
 
         if not username or not password:
-            flash("❌ Campos obligatorios", "warning")
+            flash("❌ Usuario y contraseña son obligatorios", "warning")
             return redirect(url_for("register"))
 
         db = get_db()
-        cur = db.cursor()
-
         try:
-            cur.execute(
-                "INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, 'invitado')",
+            db.execute(
+                "INSERT INTO usuarios (username, password, rol) VALUES (?, ?, 'invitado')",
                 (username, password)
             )
             db.commit()
-            flash("✅ Usuario creado", "success")
+            flash("✅ Registro exitoso", "success")
             return redirect(url_for("login"))
         except Exception:
-            flash("⚠️ Usuario ya existe", "danger")
-        finally:
-            cur.close()
+            flash("⚠️ Ese usuario ya existe", "danger")
 
     return render_template("register.html")
-
 
 # ==================== LOGOUT ====================
 @app.route("/logout")
@@ -84,43 +72,28 @@ def logout():
     flash("👋 Sesión cerrada", "info")
     return redirect(url_for("login"))
 
-
 # ==================== DASHBOARD ====================
 @app.route("/")
 @login_required
 def dashboard():
     return render_template("dashboard.html")
 
-
-# ==================== USUARIOS ====================
-@app.route("/usuarios")
+# ==================== EXPORTAR MIEMBROS A EXCEL ====================
+@app.route("/miembros/exportar")
 @admin_required
-def listar_usuarios():
+def exportar_miembros():
     db = get_db()
-    cur = db.cursor()
-    cur.execute("SELECT id, username, rol FROM usuarios ORDER BY username")
-    usuarios = cur.fetchall()
-    cur.close()
-    return render_template("usuarios.html", usuarios=usuarios)
+    miembros = db.execute("SELECT nombre, telefono FROM miembros ORDER BY nombre").fetchall()
 
+    import pandas as pd
+    df = pd.DataFrame(miembros, columns=["Nombre", "Teléfono (WhatsApp)"])
+    df.to_excel('miembros.xlsx', index=False)
 
-@app.route("/usuarios/eliminar/<int:user_id>", methods=["POST"])
-@admin_required
-def eliminar_usuario(user_id):
-    db = get_db()
-
-    if user_id == session.get("user_id"):
-        flash("⛔ No puedes eliminarte a ti mismo", "danger")
-        return redirect(url_for("listar_usuarios"))
-
-    cur = db.cursor()
-    cur.execute("DELETE FROM usuarios WHERE id = %s", (user_id,))
-    db.commit()
-    cur.close()
-
-    flash("🗑️ Usuario eliminado", "danger")
-    return redirect(url_for("listar_usuarios"))
-
+    return send_file(
+        'miembros.xlsx',
+        as_attachment=True,
+        download_name='Miembros_Iglesia.xlsx'
+    )
 
 # ==================== BLUEPRINTS ====================
 from routes.miembros import miembros_bp
@@ -129,7 +102,6 @@ from routes.eventos import eventos_bp
 app.register_blueprint(miembros_bp)
 app.register_blueprint(eventos_bp)
 
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

@@ -1,69 +1,57 @@
+# models/db.py
 import os
-import psycopg2
-from flask import g
+import sqlite3
+from flask import g, current_app
 
-# ================================
-# CONEXIÓN A BASE DE DATOS
-# ================================
 def get_db():
+    """Conecta a la base de datos (SQLite)"""
     if 'db' not in g:
-        g.db = psycopg2.connect(os.environ["DATABASE_URL"])
+        # Ruta de la base de datos
+        if current_app.config.get('DATABASE'):
+            db_path = current_app.config['DATABASE']
+        else:
+            # Por defecto en Render usa /data/iglesia.db
+            db_path = os.path.join('/data', 'iglesia.db') if os.environ.get('RENDER') else 'iglesia.db'
+
+        # Crear directorio si no existe (importante en Render)
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
+        g.db = sqlite3.connect(db_path)
+        g.db.row_factory = sqlite3.Row   # Permite acceder por nombre: row['nombre']
+
     return g.db
 
 
 def close_db(e=None):
+    """Cierra la conexión a la base de datos"""
     db = g.pop('db', None)
     if db is not None:
         db.close()
 
 
-# ================================
-# INICIALIZAR BASE DE DATOS
-# ================================
 def init_db():
+    """Inicializa la base de datos con el schema.sql"""
     db = get_db()
-    cur = db.cursor()
+    schema_path = os.path.join(current_app.root_path, 'schema.sql')
 
-    with open("schema.sql", "r", encoding="utf-8") as f:
-        sql = f.read()
+    # Si no encuentra el schema en root_path, busca en el directorio padre
+    if not os.path.exists(schema_path):
+        schema_path = os.path.join(os.path.dirname(__file__), '..', 'schema.sql')
 
     try:
-        cur.execute(sql)
+        with open(schema_path, 'r', encoding='utf-8') as f:
+            db.executescript(f.read())
         db.commit()
-        print("✅ DB creada correctamente")
+        print("✅ Base de datos inicializada correctamente")
     except Exception as e:
-        db.rollback()
-        print("❌ Error en schema.sql:", e)
+        print("❌ Error al inicializar la base de datos:", e)
         raise
-    finally:
-        cur.close()
 
 
-# ================================
-# HELPER PARA CONSULTAS SQL
-# ================================
-def query_db(sql, params=None, fetchone=False, fetchall=False, commit=False):
-    conn = get_db()
-    cur = conn.cursor()
-
-    try:
-        cur.execute(sql, params or ())
-
-        result = None
-
-        if commit:
-            conn.commit()
-        elif fetchone:
-            result = cur.fetchone()
-        elif fetchall:
-            result = cur.fetchall()
-
-        return result
-
-    except Exception as e:
-        if commit:
-            conn.rollback()
-        raise e
-
-    finally:
-        cur.close()
+# Helper opcional para consultas más limpias
+def query_db(query, args=(), one=False):
+    """Ejecuta una consulta y devuelve resultado"""
+    cur = get_db().execute(query, args)
+    rv = cur.fetchall()
+    cur.close()
+    return (rv[0] if rv else None) if one else rv
