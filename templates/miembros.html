@@ -10,9 +10,11 @@
         <h2>👥 Gestión de Miembros</h2>
         
         <div>
-            <span class="badge bg-primary fs-6 me-2">{{ miembros|length }} miembros</span>
+            <span class="badge bg-primary fs-6 me-2">
+                {{ miembros|length if miembros else 0 }} miembros
+            </span>
             
-            {% if session.rol == 'admin' %}
+            {% if session.get('rol') == 'admin' %}
             <a href="{{ url_for('exportar_miembros') }}" class="btn btn-success btn-sm">
                 📊 Exportar a Excel
             </a>
@@ -26,7 +28,7 @@
             <form method="GET" action="{{ url_for('miembros.listar') }}">
                 <div class="input-group">
                     <input type="text" name="search" class="form-control" 
-                           placeholder="Buscar por nombre..." value="{{ search }}">
+                           placeholder="Buscar por nombre..." value="{{ search or '' }}">
                     <button type="submit" class="btn btn-primary">Buscar</button>
                     {% if search %}
                     <a href="{{ url_for('miembros.listar') }}" class="btn btn-secondary">Limpiar</a>
@@ -37,7 +39,7 @@
     </div>
 
     <!-- Formulario para agregar miembro (solo admin) -->
-    {% if session.rol == 'admin' %}
+    {% if session.get('rol') == 'admin' %}
     <div class="card mb-4">
         <div class="card-header bg-success text-white">
             <strong>➕ Agregar Nuevo Miembro</strong>
@@ -91,13 +93,13 @@
                         <th>ID</th>
                         <th>Nombre</th>
                         <th>WhatsApp</th>
-                        {% if session.rol == 'admin' %}
+                        {% if session.get('rol') == 'admin' %}
                         <th width="180">Acciones</th>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% for m in miembros %}
+                    {% for m in miembros or [] %}
                     <tr>
                         <td>{{ m['id'] }}</td>
                         <td>{{ m['nombre'] }}</td>
@@ -112,7 +114,7 @@
                                 <span class="text-muted">—</span>
                             {% endif %}
                         </td>
-                        {% if session.rol == 'admin' %}
+                        {% if session.get('rol') == 'admin' %}
                         <td>
                             <a href="{{ url_for('miembros.editar', id=m['id']) }}" 
                                class="btn btn-warning btn-sm">✏️ Editar</a>
