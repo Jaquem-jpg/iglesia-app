@@ -31,43 +31,11 @@ def init_db():
         cur.close()
 
 # ============================================================
-# FUNCIÓN HELPER PARA EJECUTAR CONSULTAS FÁCILMENTE
+# FUNCIÓN HELPER PARA EJECUTAR CONSULTAS (OPCIONAL pero útil)
 # ============================================================
 def query_db(sql, params=None, fetchone=False, fetchall=False, commit=False):
     """
     Ejecuta consultas SQL de forma segura con PostgreSQL.
-    
-    Ejemplos de uso:
-    
-    # SELECT - múltiples registros
-    miembros = query_db("SELECT * FROM miembros ORDER BY nombre", fetchall=True)
-    
-    # SELECT - un solo registro
-    usuario = query_db("SELECT * FROM usuarios WHERE id = %s", [1], fetchone=True)
-    
-    # SELECT con búsqueda
-    resultados = query_db(
-        "SELECT * FROM eventos WHERE titulo ILIKE %s",
-        [f"%{busqueda}%"],
-        fetchall=True
-    )
-    
-    # INSERT
-    query_db(
-        "INSERT INTO miembros (nombre, telefono) VALUES (%s, %s)",
-        ["Juan Perez", "+56912345678"],
-        commit=True
-    )
-    
-    # UPDATE
-    query_db(
-        "UPDATE miembros SET nombre = %s WHERE id = %s",
-        ["Juan Carlos", 1],
-        commit=True
-    )
-    
-    # DELETE
-    query_db("DELETE FROM eventos WHERE id = %s", [5], commit=True)
     """
     conn = get_db()
     cursor = conn.cursor()
