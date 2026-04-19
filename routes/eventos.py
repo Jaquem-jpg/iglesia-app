@@ -1,6 +1,5 @@
-# routes/eventos.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models.db import get_db
+from models.db import query_db
 from decorators import login_required, admin_required
 
 eventos_bp = Blueprint('eventos', __name__, url_prefix='/eventos')
@@ -9,21 +8,17 @@ eventos_bp = Blueprint('eventos', __name__, url_prefix='/eventos')
 @login_required
 def listar():
     search = request.args.get('search', '').strip()
-    db = get_db()
     
     if search:
-        query = """
+        eventos = query_db("""
             SELECT * FROM eventos 
-            WHERE titulo LIKE ? OR lugar LIKE ? OR descripcion LIKE ?
+            WHERE titulo ILIKE %s OR lugar ILIKE %s OR descripcion ILIKE %s
             ORDER BY fecha, hora
-        """
-        eventos = db.execute(query, (f"%{search}%", f"%{search}%", f"%{search}%")).fetchall()
+        """, (f"%{search}%", f"%{search}%", f"%{search}%"), fetchall=True)
     else:
-        eventos = db.execute("SELECT * FROM eventos ORDER BY fecha, hora").fetchall()
+        eventos = query_db("SELECT * FROM eventos ORDER BY fecha, hora", fetchall=True)
     
     return render_template("eventos.html", eventos=eventos, search=search)
-
-# ==================== RUTAS DE ADMINISTRACIÓN (SOLO ADMIN) ====================
 
 @eventos_bp.route('/agregar', methods=['POST'])
 @admin_required
@@ -35,12 +30,10 @@ def agregar():
     descripcion = request.form.get('descripcion', '').strip()
 
     if titulo and fecha:
-        db = get_db()
-        db.execute("""
+        query_db("""
             INSERT INTO eventos (titulo, fecha, hora, lugar, descripcion) 
-            VALUES (?, ?, ?, ?, ?)
-        """, (titulo, fecha, hora, lugar, descripcion))
-        db.commit()
+            VALUES (%s, %s, %s, %s, %s)
+        """, (titulo, fecha, hora, lugar, descripcion), commit=True)
         flash('✅ Evento agregado correctamente', 'success')
     else:
         flash('⚠️ Título y fecha son obligatorios', 'warning')
@@ -50,7 +43,6 @@ def agregar():
 @eventos_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @admin_required
 def editar(id):
-    db = get_db()
     if request.method == 'POST':
         titulo = request.form.get('titulo', '').strip()
         fecha = request.form.get('fecha')
@@ -59,23 +51,20 @@ def editar(id):
         descripcion = request.form.get('descripcion', '').strip()
 
         if titulo and fecha:
-            db.execute("""
+            query_db("""
                 UPDATE eventos 
-                SET titulo = ?, fecha = ?, hora = ?, lugar = ?, descripcion = ?
-                WHERE id = ?
-            """, (titulo, fecha, hora, lugar, descripcion, id))
-            db.commit()
+                SET titulo = %s, fecha = %s, hora = %s, lugar = %s, descripcion = %s
+                WHERE id = %s
+            """, (titulo, fecha, hora, lugar, descripcion, id), commit=True)
             flash('✏️ Evento actualizado', 'success')
             return redirect(url_for('eventos.listar'))
     
-    evento = db.execute("SELECT * FROM eventos WHERE id = ?", (id,)).fetchone()
+    evento = query_db("SELECT * FROM eventos WHERE id = %s", (id,), fetchone=True)
     return render_template("editar_evento.html", evento=evento)
 
 @eventos_bp.route('/eliminar/<int:id>', methods=['POST'])
 @admin_required
 def eliminar(id):
-    db = get_db()
-    db.execute("DELETE FROM eventos WHERE id = ?", (id,))
-    db.commit()
+    query_db("DELETE FROM eventos WHERE id = %s", (id,), commit=True)
     flash('🗑️ Evento eliminado', 'danger')
     return redirect(url_for('eventos.listar'))
