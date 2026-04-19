@@ -2,16 +2,24 @@ import os
 import psycopg2
 from flask import g
 
+# ================================
+# CONEXIÓN A BASE DE DATOS
+# ================================
 def get_db():
     if 'db' not in g:
         g.db = psycopg2.connect(os.environ["DATABASE_URL"])
     return g.db
+
 
 def close_db(e=None):
     db = g.pop('db', None)
     if db is not None:
         db.close()
 
+
+# ================================
+# INICIALIZAR BASE DE DATOS
+# ================================
 def init_db():
     db = get_db()
     cur = db.cursor()
@@ -30,33 +38,32 @@ def init_db():
     finally:
         cur.close()
 
-# ============================================================
-# FUNCIÓN HELPER PARA EJECUTAR CONSULTAS (OPCIONAL pero útil)
-# ============================================================
+
+# ================================
+# HELPER PARA CONSULTAS SQL
+# ================================
 def query_db(sql, params=None, fetchone=False, fetchall=False, commit=False):
-    """
-    Ejecuta consultas SQL de forma segura con PostgreSQL.
-    """
     conn = get_db()
-    cursor = conn.cursor()
-    
+    cur = conn.cursor()
+
     try:
-        cursor.execute(sql, params or ())
-        
+        cur.execute(sql, params or ())
+
+        result = None
+
         if commit:
             conn.commit()
-            result = None
-        elif fetchall:
-            result = cursor.fetchall()
         elif fetchone:
-            result = cursor.fetchone()
-        else:
-            result = None
-            
+            result = cur.fetchone()
+        elif fetchall:
+            result = cur.fetchall()
+
         return result
+
     except Exception as e:
         if commit:
             conn.rollback()
         raise e
+
     finally:
-        cursor.close()
+        cur.close()
