@@ -15,7 +15,7 @@
             </span>
             
             {% if session.get('rol') == 'admin' %}
-            <a href="{{ url_for('exportar_miembros') }}" class="btn btn-success btn-sm">
+            <a href="{{ url_for('miembros.exportar') }}" class="btn btn-success btn-sm"></a>
                 📊 Exportar a Excel
             </a>
             {% endif %}
