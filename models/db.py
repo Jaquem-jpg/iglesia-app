@@ -5,13 +5,21 @@ from flask import g, current_app
 
 def get_db():
     if 'db' not in g:
-        db_path = current_app.config['DATABASE']
-        
-        # Crear el directorio del disco de forma segura
+        # Fallback si DATABASE no está en config
+        if hasattr(current_app.config, 'DATABASE') and current_app.config.get('DATABASE'):
+            db_path = current_app.config['DATABASE']
+        else:
+            # Fallback directo
+            if os.environ.get('RENDER'):
+                db_path = '/opt/render/project/src/data/iglesia.db'
+            else:
+                db_path = 'iglesia.db'
+
+        # Crear directorio
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
         g.db = sqlite3.connect(db_path)
-        g.db.row_factory = sqlite3.Row   # ← Esto arregla el error 'tuple object' has no attribute 'id'
+        g.db.row_factory = sqlite3.Row   # Importante para m['id']
     
     return g.db
 
@@ -26,7 +34,6 @@ def init_db():
     db = get_db()
     schema_path = os.path.join(current_app.root_path, 'schema.sql')
     
-    # Fallback si no encuentra el schema
     if not os.path.exists(schema_path):
         schema_path = os.path.join(os.path.dirname(__file__), '..', 'schema.sql')
 
@@ -36,5 +43,5 @@ def init_db():
         db.commit()
         print("✅ Base de datos inicializada correctamente")
     except Exception as e:
-        print("❌ Error al inicializar la base de datos:", str(e))
+        print("❌ Error al inicializar DB:", str(e))
         raise
