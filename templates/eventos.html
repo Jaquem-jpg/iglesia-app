@@ -7,7 +7,9 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>📅 Gestión de Eventos</h2>
-        <span class="badge bg-primary fs-6">{{ eventos|length }} eventos</span>
+        <span class="badge bg-primary fs-6">
+            {{ eventos|length if eventos else 0 }} eventos
+        </span>
     </div>
 
     <!-- Buscador -->
@@ -16,7 +18,7 @@
             <form method="GET" action="{{ url_for('eventos.listar') }}">
                 <div class="input-group">
                     <input type="text" name="search" class="form-control" 
-                           placeholder="Buscar por título, lugar o descripción..." value="{{ search }}">
+                           placeholder="Buscar por título, lugar o descripción..." value="{{ search or '' }}">
                     <button type="submit" class="btn btn-primary">Buscar</button>
                     {% if search %}
                     <a href="{{ url_for('eventos.listar') }}" class="btn btn-secondary">Limpiar</a>
@@ -27,7 +29,7 @@
     </div>
 
     <!-- Formulario para agregar evento (solo admin) -->
-    {% if session.rol == 'admin' %}
+    {% if session.get('rol') == 'admin' %}
     <div class="card mb-4">
         <div class="card-header bg-success text-white">
             <strong>➕ Agregar Nuevo Evento</strong>
@@ -35,7 +37,7 @@
         <div class="card-body">
             <form method="POST" action="{{ url_for('eventos.agregar') }}">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label">Título del evento</label>
                         <input type="text" name="titulo" class="form-control" required>
                     </div>
@@ -43,22 +45,20 @@
                         <label class="form-label">Fecha</label>
                         <input type="date" name="fecha" class="form-control" required>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label class="form-label">Hora</label>
                         <input type="time" name="hora" class="form-control">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-6">
                         <label class="form-label">Lugar</label>
                         <input type="text" name="lugar" class="form-control">
                     </div>
                     <div class="col-12">
                         <label class="form-label">Descripción</label>
-                        <textarea name="descripcion" class="form-control" rows="2"></textarea>
+                        <textarea name="descripcion" class="form-control" rows="3"></textarea>
                     </div>
                     <div class="col-12">
-                        <button type="submit" class="btn btn-success">
-                            Agregar Evento
-                        </button>
+                        <button type="submit" class="btn btn-success">Agregar Evento</button>
                     </div>
                 </div>
             </form>
@@ -80,20 +80,20 @@
                         <th>Fecha</th>
                         <th>Hora</th>
                         <th>Lugar</th>
-                        {% if session.rol == 'admin' %}
-                        <th width="200">Acciones</th>
+                        {% if session.get('rol') == 'admin' %}
+                        <th width="180">Acciones</th>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% for e in eventos %}
+                    {% for e in eventos or [] %}
                     <tr>
                         <td>{{ e['id'] }}</td>
                         <td>{{ e['titulo'] }}</td>
                         <td>{{ e['fecha'] }}</td>
                         <td>{{ e['hora'] or '—' }}</td>
                         <td>{{ e['lugar'] or '—' }}</td>
-                        {% if session.rol == 'admin' %}
+                        {% if session.get('rol') == 'admin' %}
                         <td>
                             <a href="{{ url_for('eventos.editar', id=e['id']) }}" 
                                class="btn btn-warning btn-sm">✏️ Editar</a>

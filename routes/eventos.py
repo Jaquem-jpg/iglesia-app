@@ -1,3 +1,4 @@
+# routes/eventos.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from models.db import query_db
 from decorators import login_required, admin_required
@@ -61,7 +62,6 @@ def agregar():
 @eventos_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @admin_required
 def editar(id):
-
     if request.method == 'POST':
         titulo = request.form.get('titulo', '').strip()
         fecha = request.form.get('fecha')
@@ -76,9 +76,10 @@ def editar(id):
                 WHERE id=%s
             """, (titulo, fecha, hora, lugar, descripcion, id), commit=True)
 
-            flash('✏️ Evento actualizado', 'success')
+            flash('✏️ Evento actualizado correctamente', 'success')
             return redirect(url_for('eventos.listar'))
 
+    # Obtener el evento para mostrar en el formulario
     evento = query_db(
         "SELECT * FROM eventos WHERE id=%s",
         (id,),
@@ -100,5 +101,5 @@ def eliminar(id):
         commit=True
     )
 
-    flash('🗑️ Evento eliminado', 'danger')
+    flash('🗑️ Evento eliminado correctamente', 'danger')
     return redirect(url_for('eventos.listar'))

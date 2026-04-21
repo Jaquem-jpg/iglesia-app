@@ -5,22 +5,140 @@
 {% block content %}
 <div class="container mt-4">
 
+    <!-- Encabezado con botón de Exportar -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>👥 Gestión de Miembros</h2>
         
         <div>
-            <span class="badge bg-primary fs-6 me-2">{{ miembros|length }} miembros</span>
+            <span class="badge bg-primary fs-6 me-2">
+                {{ miembros|length if miembros else 0 }} miembros
+            </span>
             
-            {% if session.rol == 'admin' %}
-            <a href="{{ url_for('exportar_miembros') }}" class="btn btn-success btn-sm">
-                📊 Exportar a Excel
+            {% if session.get('rol') == 'admin' %}
+            <a href="{{ url_for('miembros.exportar') }}" class="btn btn-success btn-sm">
+                📊 Exportar a CSV
             </a>
             {% endif %}
         </div>
     </div>
 
-    <!-- Resto del archivo (buscador, formulario, tabla) se mantiene igual que antes -->
-    <!-- ... (el resto del código que ya tenías) ... -->
+    <!-- Buscador -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <form method="GET" action="{{ url_for('miembros.listar') }}">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Buscar por nombre..." value="{{ search or '' }}">
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                    {% if search %}
+                    <a href="{{ url_for('miembros.listar') }}" class="btn btn-secondary">Limpiar</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Formulario para agregar miembro (solo admin) -->
+    {% if session.get('rol') == 'admin' %}
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <strong>➕ Agregar Nuevo Miembro</strong>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('miembros.agregar') }}">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label">Nombre completo</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Código de país</label>
+                        <select name="codigo_pais" class="form-select" required>
+                            <option value="1">🇺🇸 (+1)</option>
+                            <option value="34">🇪🇸 (+34)</option>
+                            <option value="506">🇨🇷 (+506)</option>
+                            <option value="52">🇲🇽 (+52)</option>
+                            <option value="56">🇨🇱 (+56)</option>
+                            <option value="57">🇨🇴 (+57)</option>
+                            <option value="58">🇻🇪 (+58)</option>
+                            <option value="591">🇧🇴 (+591)</option>
+                            <option value="593">🇪🇨 (+593)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Número de teléfono</label>
+                        <input type="text" name="telefono" class="form-control" 
+                               placeholder="4123456789" required>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success">
+                            Agregar Miembro
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabla de miembros -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <strong>📋 Lista de Miembros</strong>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>WhatsApp</th>
+                        {% if session.get('rol') == 'admin' %}
+                        <th width="180">Acciones</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in miembros or [] %}
+                    <tr>
+                        <td>{{ m['id'] }}</td>
+                        <td>{{ m['nombre'] }}</td>
+                        <td>
+                            {% if m['telefono'] %}
+                                <a href="https://wa.me/{{ m['telefono'] }}" 
+                                   target="_blank" 
+                                   class="text-success fw-bold text-decoration-none">
+                                    📲 {{ m['telefono'] }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        {% if session.get('rol') == 'admin' %}
+                        <td>
+                            <a href="{{ url_for('miembros.editar', id=m['id']) }}" 
+                               class="btn btn-warning btn-sm">✏️ Editar</a>
+                            
+                            <form method="POST" 
+                                  action="{{ url_for('miembros.eliminar', id=m['id']) }}" 
+                                  style="display: inline;"
+                                  onsubmit="return confirm('¿Eliminar este miembro?')">
+                                <button type="submit" class="btn btn-danger btn-sm">🗑️ Eliminar</button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">
+                            No se encontraron miembros.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
 </div>
 {% endblock %}
