@@ -1,11 +1,14 @@
-# routes/eventos.py
+    # routes/eventos.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from models.db import query_db
 from decorators import login_required, admin_required
 
 eventos_bp = Blueprint('eventos', __name__, url_prefix='/eventos')
 
-# LISTAR EVENTOS - Versión mínima y segura
+
+# ================================
+# LISTAR EVENTOS (versión simple y segura)
+# ================================
 @eventos_bp.route('/')
 @login_required
 def listar():
@@ -28,7 +31,9 @@ def listar():
     return render_template("eventos.html", eventos=eventos, search=search)
 
 
+# ================================
 # AGREGAR EVENTO
+# ================================
 @eventos_bp.route('/agregar', methods=['POST'])
 @admin_required
 def agregar():
@@ -43,6 +48,7 @@ def agregar():
             INSERT INTO eventos (titulo, fecha, hora, lugar, descripcion)
             VALUES (%s, %s, %s, %s, %s)
         """, (titulo, fecha, hora, lugar, descripcion), commit=True)
+
         flash('✅ Evento agregado correctamente', 'success')
     else:
         flash('⚠️ Título y fecha son obligatorios', 'warning')
@@ -50,7 +56,9 @@ def agregar():
     return redirect(url_for('eventos.listar'))
 
 
+# ================================
 # EDITAR EVENTO
+# ================================
 @eventos_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @admin_required
 def editar(id):
@@ -67,17 +75,20 @@ def editar(id):
                 SET titulo=%s, fecha=%s, hora=%s, lugar=%s, descripcion=%s
                 WHERE id=%s
             """, (titulo, fecha, hora, lugar, descripcion, id), commit=True)
-            flash('✏️ Evento actualizado', 'success')
+
+            flash('✏️ Evento actualizado correctamente', 'success')
             return redirect(url_for('eventos.listar'))
 
     evento = query_db("SELECT * FROM eventos WHERE id=%s", (id,), fetchone=True)
     return render_template("editar_evento.html", evento=evento)
 
 
+# ================================
 # ELIMINAR EVENTO
+# ================================
 @eventos_bp.route('/eliminar/<int:id>', methods=['POST'])
 @admin_required
 def eliminar(id):
     query_db("DELETE FROM eventos WHERE id=%s", (id,), commit=True)
-    flash('🗑️ Evento eliminado', 'danger')
+    flash('🗑️ Evento eliminado correctamente', 'danger')
     return redirect(url_for('eventos.listar'))
