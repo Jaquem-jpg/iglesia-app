@@ -1,4 +1,4 @@
--- Tabla de miembros (con nuevo campo notas)
+-- Tabla de miembros (con campo notas)
 CREATE TABLE IF NOT EXISTS miembros (
     id SERIAL PRIMARY KEY,
     nombre TEXT NOT NULL,
