@@ -8,27 +8,46 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>📅 Gestión de Eventos</h2>
         <span class="badge bg-primary fs-6">
-            {{ eventos|length if eventos else 0 }} eventos
+            {{ eventos|length }} eventos
         </span>
     </div>
+
+    <!-- Pestañas de filtro -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if filtro == 'proximos' else '' }}" 
+               href="{{ url_for('eventos.listar', filtro='proximos') }}">
+                Próximos Eventos
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if filtro == 'pasados' else '' }}" 
+               href="{{ url_for('eventos.listar', filtro='pasados') }}">
+                Eventos Pasados
+            </a>
+        </li>
+    </ul>
 
     <!-- Buscador -->
     <div class="row mb-4">
         <div class="col-md-8">
             <form method="GET" action="{{ url_for('eventos.listar') }}">
+                <input type="hidden" name="filtro" value="{{ filtro }}">
                 <div class="input-group">
                     <input type="text" name="search" class="form-control" 
-                           placeholder="Buscar por título, lugar o descripción..." value="{{ search or '' }}">
+                           placeholder="Buscar por título, lugar o descripción..." 
+                           value="{{ search or '' }}">
                     <button type="submit" class="btn btn-primary">Buscar</button>
                     {% if search %}
-                    <a href="{{ url_for('eventos.listar') }}" class="btn btn-secondary">Limpiar</a>
+                    <a href="{{ url_for('eventos.listar', filtro=filtro) }}" 
+                       class="btn btn-secondary">Limpiar</a>
                     {% endif %}
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Formulario para agregar evento (solo admin) -->
+    <!-- Formulario para agregar nuevo evento (solo admin) -->
     {% if session.get('rol') == 'admin' %}
     <div class="card mb-4">
         <div class="card-header bg-success text-white">
@@ -69,7 +88,9 @@
     <!-- Tabla de eventos -->
     <div class="card">
         <div class="card-header bg-primary text-white">
-            <strong>📋 Lista de Eventos</strong>
+            <strong>
+                {% if filtro == 'proximos' %}Próximos Eventos{% else %}Eventos Pasados{% endif %}
+            </strong>
         </div>
         <div class="card-body p-0">
             <table class="table table-hover mb-0">
@@ -110,7 +131,7 @@
                     {% else %}
                     <tr>
                         <td colspan="6" class="text-center py-4 text-muted">
-                            No se encontraron eventos.
+                            No se encontraron eventos {{ 'próximos' if filtro == 'proximos' else 'pasados' }}.
                         </td>
                     </tr>
                     {% endfor %}

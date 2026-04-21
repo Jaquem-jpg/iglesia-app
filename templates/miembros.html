@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container mt-4">
 
-    <!-- Encabezado con botón de Exportar -->
+    <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>👥 Gestión de Miembros</h2>
         
@@ -71,6 +71,11 @@
                                placeholder="4123456789" required>
                     </div>
                     <div class="col-12">
+                        <label class="form-label">Notas / Observaciones</label>
+                        <textarea name="notas" class="form-control" rows="2" 
+                                  placeholder="Ej: Miembro desde 2023, líder de alabanza..."></textarea>
+                    </div>
+                    <div class="col-12">
                         <button type="submit" class="btn btn-success">
                             Agregar Miembro
                         </button>
@@ -93,6 +98,7 @@
                         <th>ID</th>
                         <th>Nombre</th>
                         <th>WhatsApp</th>
+                        <th>Notas</th>
                         {% if session.get('rol') == 'admin' %}
                         <th width="180">Acciones</th>
                         {% endif %}
@@ -114,6 +120,9 @@
                                 <span class="text-muted">—</span>
                             {% endif %}
                         </td>
+                        <td>
+                            <small class="text-muted">{{ m['notas']|truncate(60) or '—' }}</small>
+                        </td>
                         {% if session.get('rol') == 'admin' %}
                         <td>
                             <a href="{{ url_for('miembros.editar', id=m['id']) }}" 
@@ -130,7 +139,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">
+                        <td colspan="5" class="text-center py-4 text-muted">
                             No se encontraron miembros.
                         </td>
                     </tr>

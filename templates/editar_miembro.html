@@ -5,48 +5,57 @@
 {% block content %}
 <div class="container mt-4">
 
-    <div class="card">
-        <div class="card-header bg-warning text-dark">
-            <strong>✏️ Editar Miembro</strong>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('miembros.editar', id=miembro['id']) }}">
-                <div class="row g-3">
-                    <div class="col-md-5">
-                        <label class="form-label">Nombre completo</label>
-                        <input type="text" name="nombre" class="form-control" 
-                               value="{{ miembro['nombre'] }}" required>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Código de país</label>
-                        <select name="codigo_pais" class="form-select" required>
-                            <option value="1"  {% if miembro['telefono'] and miembro['telefono'][:1] == '1' %}selected{% endif %}>🇺🇸 Estados Unidos (+1)</option>
-                            <option value="34" {% if miembro['telefono'] and miembro['telefono'][:2] == '34' %}selected{% endif %}>🇪🇸 España (+34)</option>
-                            <option value="506" {% if miembro['telefono'] and miembro['telefono'][:3] == '506' %}selected{% endif %}>🇨🇷 Costa Rica (+506)</option>
-                            <option value="52" {% if miembro['telefono'] and miembro['telefono'][:2] == '52' %}selected{% endif %}>🇲🇽 México (+52)</option>
-                            <option value="56" {% if miembro['telefono'] and miembro['telefono'][:2] == '56' %}selected{% endif %}>🇨🇱 Chile (+56)</option>
-                            <option value="57" {% if miembro['telefono'] and miembro['telefono'][:2] == '57' %}selected{% endif %}>🇨🇴 Colombia (+57)</option>
-                            <option value="58" {% if miembro['telefono'] and miembro['telefono'][:2] == '58' %}selected{% endif %}>🇻🇪 Venezuela (+58)</option>
-                            <option value="591" {% if miembro['telefono'] and miembro['telefono'][:3] == '591' %}selected{% endif %}>🇧🇴 Bolivia (+591)</option>
-                            <option value="593" {% if miembro['telefono'] and miembro['telefono'][:3] == '593' %}selected{% endif %}>🇪🇨 Ecuador (+593)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Número de teléfono</label>
-                        <input type="text" name="telefono" class="form-control" 
-                               placeholder="4123456789"
-                               value="{{ miembro['telefono'][3:] if miembro['telefono'] and miembro['telefono']|length > 3 else miembro['telefono'] }}">
-                    </div>
-                    <div class="col-12 mt-4">
-                        <button type="submit" class="btn btn-warning">
-                            Guardar Cambios
-                        </button>
-                        <a href="{{ url_for('miembros.listar') }}" class="btn btn-secondary">
-                            Cancelar
-                        </a>
-                    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">✏️ Editar Miembro</h5>
                 </div>
-            </form>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('miembros.editar', id=miembro['id']) }}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre completo</label>
+                                <input type="text" name="nombre" class="form-control" 
+                                       value="{{ miembro['nombre'] }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Código de país</label>
+                                <select name="codigo_pais" class="form-select" required>
+                                    <option value="1" {% if miembro['telefono'] and miembro['telefono'][:1] == '1' %}selected{% endif %}>🇺🇸 (+1)</option>
+                                    <option value="34" {% if miembro['telefono'] and miembro['telefono'][:2] == '34' %}selected{% endif %}>🇪🇸 (+34)</option>
+                                    <option value="506" {% if miembro['telefono'] and miembro['telefono'][:3] == '506' %}selected{% endif %}>🇨🇷 (+506)</option>
+                                    <option value="52" {% if miembro['telefono'] and miembro['telefono'][:2] == '52' %}selected{% endif %}>🇲🇽 (+52)</option>
+                                    <option value="56" {% if miembro['telefono'] and miembro['telefono'][:2] == '56' %}selected{% endif %}>🇨🇱 (+56)</option>
+                                    <option value="57" {% if miembro['telefono'] and miembro['telefono'][:2] == '57' %}selected{% endif %}>🇨🇴 (+57)</option>
+                                    <option value="58" {% if miembro['telefono'] and miembro['telefono'][:2] == '58' %}selected{% endif %}>🇻🇪 (+58)</option>
+                                    <option value="591" {% if miembro['telefono'] and miembro['telefono'][:3] == '591' %}selected{% endif %}>🇧🇴 (+591)</option>
+                                    <option value="593" {% if miembro['telefono'] and miembro['telefono'][:3] == '593' %}selected{% endif %}>🇪🇨 (+593)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" name="telefono" class="form-control" 
+                                       value="{{ miembro['telefono'][3:] if miembro['telefono'] else '' }}" 
+                                       placeholder="4123456789" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Notas / Observaciones</label>
+                                <textarea name="notas" class="form-control" rows="4">{{ miembro['notas'] or '' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> Guardar cambios
+                            </button>
+                            <a href="{{ url_for('miembros.listar') }}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
