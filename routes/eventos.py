@@ -2,47 +2,33 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from models.db import query_db
 from decorators import login_required, admin_required
-from datetime import date
 
 eventos_bp = Blueprint('eventos', __name__, url_prefix='/eventos')
 
-
+# LISTAR EVENTOS - Versión mínima y segura
 @eventos_bp.route('/')
 @login_required
 def listar():
-    filtro = request.args.get('filtro', 'proximos')
     search = request.args.get('search', '').strip()
 
-    hoy = date.today()
-
     if search:
-        base_sql = """
+        eventos = query_db("""
             SELECT * FROM eventos 
-            WHERE (titulo ILIKE %s OR lugar ILIKE %s OR descripcion ILIKE %s)
-        """
-        params = [f"%{search}%", f"%{search}%", f"%{search}%"]
+            WHERE titulo ILIKE %s 
+               OR lugar ILIKE %s 
+               OR descripcion ILIKE %s
+            ORDER BY fecha DESC, hora DESC
+        """, (f"%{search}%", f"%{search}%", f"%{search}%"), fetchall=True)
     else:
-        base_sql = "SELECT * FROM eventos"
-        params = []
+        eventos = query_db(
+            "SELECT * FROM eventos ORDER BY fecha DESC, hora DESC",
+            fetchall=True
+        )
 
-    if filtro == 'proximos':
-        sql = base_sql + " AND fecha >= %s ORDER BY fecha ASC, hora ASC"
-        params.append(hoy)
-    else:
-        sql = base_sql + " AND fecha < %s ORDER BY fecha DESC, hora DESC"
-        params.append(hoy)
-
-    eventos = query_db(sql, params, fetchall=True)
-
-    return render_template(
-        "eventos.html", 
-        eventos=eventos, 
-        search=search, 
-        filtro=filtro
-    )
+    return render_template("eventos.html", eventos=eventos, search=search)
 
 
-# Resto de rutas (agregar, editar, eliminar) se mantienen igual
+# AGREGAR EVENTO
 @eventos_bp.route('/agregar', methods=['POST'])
 @admin_required
 def agregar():
@@ -64,6 +50,7 @@ def agregar():
     return redirect(url_for('eventos.listar'))
 
 
+# EDITAR EVENTO
 @eventos_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @admin_required
 def editar(id):
@@ -87,6 +74,7 @@ def editar(id):
     return render_template("editar_evento.html", evento=evento)
 
 
+# ELIMINAR EVENTO
 @eventos_bp.route('/eliminar/<int:id>', methods=['POST'])
 @admin_required
 def eliminar(id):
