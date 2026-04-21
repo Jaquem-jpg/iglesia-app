@@ -1,28 +1,31 @@
--- schema.sql
-CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    rol TEXT DEFAULT 'invitado'
-);
-
+-- Tabla de miembros (con nuevo campo notas)
 CREATE TABLE IF NOT EXISTS miembros (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     nombre TEXT NOT NULL,
     telefono TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    notas TEXT
 );
 
+-- Tabla de eventos
 CREATE TABLE IF NOT EXISTS eventos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     titulo TEXT NOT NULL,
-    fecha TEXT NOT NULL,
-    hora TEXT,
+    fecha DATE NOT NULL,
+    hora TIME,
     lugar TEXT,
     descripcion TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Usuario admin por defecto (cambia la contraseña después)
-INSERT OR IGNORE INTO usuarios (username, password, rol) 
-VALUES ('admin', 'admin123', 'admin');
+-- Tabla de usuarios
+CREATE TABLE IF NOT EXISTS usuarios (
+    id SERIAL PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    rol TEXT NOT NULL DEFAULT 'invitado'
+);
+
+-- Usuario admin inicial
+INSERT INTO usuarios (username, password, rol)
+VALUES ('admin', 'iglesia123', 'admin')
+ON CONFLICT (username) DO NOTHING;

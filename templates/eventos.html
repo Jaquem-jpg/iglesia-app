@@ -1,144 +1,94 @@
-{% extends "base.html" %}
+# routes/eventos.py
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from models.db import query_db
+from decorators import login_required, admin_required
 
-{% block title %}Eventos - Iglesia App{% endblock %}
+eventos_bp = Blueprint('eventos', __name__, url_prefix='/eventos')
 
-{% block content %}
-<div class="container mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>📅 Gestión de Eventos</h2>
-        <span class="badge bg-primary fs-6">
-            {{ eventos|length }} eventos
-        </span>
-    </div>
+# ================================
+# LISTAR EVENTOS (versión simple)
+# ================================
+@eventos_bp.route('/')
+@login_required
+def listar():
+    search = request.args.get('search', '').strip()
 
-    <!-- Pestañas de filtro -->
-    <ul class="nav nav-tabs mb-4">
-        <li class="nav-item">
-            <a class="nav-link {{ 'active' if filtro == 'proximos' else '' }}" 
-               href="{{ url_for('eventos.listar', filtro='proximos') }}">
-                Próximos Eventos
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{ 'active' if filtro == 'pasados' else '' }}" 
-               href="{{ url_for('eventos.listar', filtro='pasados') }}">
-                Eventos Pasados
-            </a>
-        </li>
-    </ul>
+    if search:
+        eventos = query_db("""
+            SELECT * FROM eventos 
+            WHERE titulo ILIKE %s 
+               OR lugar ILIKE %s 
+               OR descripcion ILIKE %s
+            ORDER BY fecha DESC, hora DESC
+        """, (f"%{search}%", f"%{search}%", f"%{search}%"), fetchall=True)
+    else:
+        eventos = query_db(
+            "SELECT * FROM eventos ORDER BY fecha DESC, hora DESC",
+            fetchall=True
+        )
 
-    <!-- Buscador -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <form method="GET" action="{{ url_for('eventos.listar') }}">
-                <input type="hidden" name="filtro" value="{{ filtro }}">
-                <div class="input-group">
-                    <input type="text" name="search" class="form-control" 
-                           placeholder="Buscar por título, lugar o descripción..." 
-                           value="{{ search or '' }}">
-                    <button type="submit" class="btn btn-primary">Buscar</button>
-                    {% if search %}
-                    <a href="{{ url_for('eventos.listar', filtro=filtro) }}" 
-                       class="btn btn-secondary">Limpiar</a>
-                    {% endif %}
-                </div>
-            </form>
-        </div>
-    </div>
+    return render_template("eventos.html", eventos=eventos, search=search)
 
-    <!-- Formulario para agregar nuevo evento (solo admin) -->
-    {% if session.get('rol') == 'admin' %}
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-            <strong>➕ Agregar Nuevo Evento</strong>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('eventos.agregar') }}">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Título del evento</label>
-                        <input type="text" name="titulo" class="form-control" required>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Fecha</label>
-                        <input type="date" name="fecha" class="form-control" required>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Hora</label>
-                        <input type="time" name="hora" class="form-control">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Lugar</label>
-                        <input type="text" name="lugar" class="form-control">
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Descripción</label>
-                        <textarea name="descripcion" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-success">Agregar Evento</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-    {% endif %}
 
-    <!-- Tabla de eventos -->
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <strong>
-                {% if filtro == 'proximos' %}Próximos Eventos{% else %}Eventos Pasados{% endif %}
-            </strong>
-        </div>
-        <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Título</th>
-                        <th>Fecha</th>
-                        <th>Hora</th>
-                        <th>Lugar</th>
-                        {% if session.get('rol') == 'admin' %}
-                        <th width="180">Acciones</th>
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for e in eventos or [] %}
-                    <tr>
-                        <td>{{ e['id'] }}</td>
-                        <td>{{ e['titulo'] }}</td>
-                        <td>{{ e['fecha'] }}</td>
-                        <td>{{ e['hora'] or '—' }}</td>
-                        <td>{{ e['lugar'] or '—' }}</td>
-                        {% if session.get('rol') == 'admin' %}
-                        <td>
-                            <a href="{{ url_for('eventos.editar', id=e['id']) }}" 
-                               class="btn btn-warning btn-sm">✏️ Editar</a>
-                            
-                            <form method="POST" 
-                                  action="{{ url_for('eventos.eliminar', id=e['id']) }}" 
-                                  style="display: inline;"
-                                  onsubmit="return confirm('¿Eliminar este evento?')">
-                                <button type="submit" class="btn btn-danger btn-sm">🗑️ Eliminar</button>
-                            </form>
-                        </td>
-                        {% endif %}
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">
-                            No se encontraron eventos {{ 'próximos' if filtro == 'proximos' else 'pasados' }}.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+# ================================
+# AGREGAR EVENTO
+# ================================
+@eventos_bp.route('/agregar', methods=['POST'])
+@admin_required
+def agregar():
+    titulo = request.form.get('titulo', '').strip()
+    fecha = request.form.get('fecha')
+    hora = request.form.get('hora')
+    lugar = request.form.get('lugar', '').strip()
+    descripcion = request.form.get('descripcion', '').strip()
 
-</div>
-{% endblock %}
+    if titulo and fecha:
+        query_db("""
+            INSERT INTO eventos (titulo, fecha, hora, lugar, descripcion)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (titulo, fecha, hora, lugar, descripcion), commit=True)
+
+        flash('✅ Evento agregado correctamente', 'success')
+    else:
+        flash('⚠️ Título y fecha son obligatorios', 'warning')
+
+    return redirect(url_for('eventos.listar'))
+
+
+# ================================
+# EDITAR EVENTO
+# ================================
+@eventos_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
+@admin_required
+def editar(id):
+    if request.method == 'POST':
+        titulo = request.form.get('titulo', '').strip()
+        fecha = request.form.get('fecha')
+        hora = request.form.get('hora')
+        lugar = request.form.get('lugar', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()
+
+        if titulo and fecha:
+            query_db("""
+                UPDATE eventos 
+                SET titulo=%s, fecha=%s, hora=%s, lugar=%s, descripcion=%s
+                WHERE id=%s
+            """, (titulo, fecha, hora, lugar, descripcion, id), commit=True)
+
+            flash('✏️ Evento actualizado', 'success')
+            return redirect(url_for('eventos.listar'))
+
+    evento = query_db("SELECT * FROM eventos WHERE id=%s", (id,), fetchone=True)
+    return render_template("editar_evento.html", evento=evento)
+
+
+# ================================
+# ELIMINAR EVENTO
+# ================================
+@eventos_bp.route('/eliminar/<int:id>', methods=['POST'])
+@admin_required
+def eliminar(id):
+    query_db("DELETE FROM eventos WHERE id=%s", (id,), commit=True)
+    flash('🗑️ Evento eliminado', 'danger')
+    return redirect(url_for('eventos.listar'))
